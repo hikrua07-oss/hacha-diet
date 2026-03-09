@@ -4,8 +4,7 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node local-server.js",
-    "build": "exit 0"
+    "dev": "node _local-server.js"
   },
   "keywords": [],
   "author": "",

@@ -4,17 +4,19 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node local-server.js"
+    "dev": "node local-server.js",
+    "build": "exit 0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@google/genai": "^1.44.0",
     "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
     "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
     "express": "^5.2.1"
   }
 }

@@ -32,16 +32,6 @@ class DietApp {
      * 初期化処理: 画面表示の更新とイベントリスナーの設定
      */
     init() {
-        // まずテストデータで上書き（開発中のみ）
-        this.state.todayLog = {
-            weight: 65.2,
-            calories: 2100,
-            macros: { p: 55, f: 85, c: 220 },
-            steps: 5230,
-            exerciseCode: 15
-        };
-        this.saveData('diet_today_log', this.state.todayLog);
-
         this.updateDashboard();
         this.setupEventListeners();
     }
@@ -256,11 +246,11 @@ class DietApp {
                 c: data.c || 0
             };
 
-            // 画面に反映
-            document.getElementById('calcCal').textContent = this.currentAiMacros.cal;
-            document.getElementById('calcP').textContent = this.currentAiMacros.p;
-            document.getElementById('calcF').textContent = this.currentAiMacros.f;
-            document.getElementById('calcC').textContent = this.currentAiMacros.c;
+            // 画面に反映（input要素なので .value を使用）
+            document.getElementById('calcCal').value = this.currentAiMacros.cal;
+            document.getElementById('calcP').value = this.currentAiMacros.p;
+            document.getElementById('calcF').value = this.currentAiMacros.f;
+            document.getElementById('calcC').value = this.currentAiMacros.c;
 
             document.getElementById('aiCalcResult').style.display = 'block';
 
@@ -278,8 +268,11 @@ class DietApp {
         const weightInput = parseFloat(document.getElementById('inputWeight').value);
         const stepsInput = parseInt(document.getElementById('inputSteps').value) || 0;
 
-        // 計算済みのAIマクロ栄養素を取得
-        const { cal, p, f, c } = this.currentAiMacros;
+        // 画面上のAI計算結果（ユーザーが手動調整した可能性のある値）を取得
+        const cal = parseFloat(document.getElementById('calcCal').value) || 0;
+        const p = parseFloat(document.getElementById('calcP').value) || 0;
+        const f = parseFloat(document.getElementById('calcF').value) || 0;
+        const c = parseFloat(document.getElementById('calcC').value) || 0;
 
         // もし食事が入力されているのに計算ボタンを押していなかった時のチェック
         const foodText = document.getElementById('inputFood').value.trim();

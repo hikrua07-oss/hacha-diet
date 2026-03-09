@@ -203,14 +203,25 @@
 
                     <!-- 計算結果の表示エリア -->
                     <div id="aiCalcResult" class="ai-calc-result" style="display: none;">
-                        <div class="result-label">AIの計算結果:</div>
-                        <div class="result-cal">
-                            <span id="calcCal">0</span> <small>kcal</small>
+                        <div class="result-header">
+                            <div class="result-label">AIの計算結果</div>
+                            <div class="result-cal">
+                                <span id="calcCal">0</span> <small>kcal</small>
+                            </div>
                         </div>
                         <div class="result-pfc">
-                            P: <span id="calcP">0</span>g &nbsp;|&nbsp;
-                            F: <span id="calcF">0</span>g &nbsp;|&nbsp;
-                            C: <span id="calcC">0</span>g
+                            <div class="pfc-item">
+                                <span class="pfc-label">タンパク質</span>
+                                <span class="pfc-value"><span id="calcP">0</span>g</span>
+                            </div>
+                            <div class="pfc-item">
+                                <span class="pfc-label">脂質</span>
+                                <span class="pfc-value"><span id="calcF">0</span>g</span>
+                            </div>
+                            <div class="pfc-item">
+                                <span class="pfc-label">糖質</span>
+                                <span class="pfc-value"><span id="calcC">0</span>g</span>
+                            </div>
                         </div>
                     </div>
                 </div>

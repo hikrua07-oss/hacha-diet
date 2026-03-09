@@ -532,42 +532,96 @@ body {
 /* AI食事テキスト入力UI */
 .food-input-wrapper {
     display: flex;
-    gap: 8px;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#inputFood {
+    min-height: 120px;
+    line-height: 1.6;
 }
 
 .small-btn {
+    align-self: flex-end;
+    /* 右寄せにする */
     width: auto;
-    padding: 0 20px;
-    flex-shrink: 0;
+    min-width: 100px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    background: var(--accent-blue-soft);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+.small-btn:hover {
+    background: var(--accent-blue);
+    color: white;
 }
 
 .ai-calc-result {
-    margin-top: 12px;
-    padding: 12px 16px;
-    background: #f8fafc;
-    border-radius: 8px;
-    border-left: 4px solid var(--accent-blue);
+    margin-top: 15px;
+    padding: 16px;
+    background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+    border-radius: 16px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
     animation: fadeIn 0.3s ease-out;
 }
 
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
 .result-label {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent-blue);
 }
 
 .result-cal {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: 800;
     color: var(--text-primary);
-    line-height: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.result-cal small {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
 }
 
 .result-pfc {
-    font-size: 0.85rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(148, 163, 184, 0.3);
+}
+
+.pfc-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.pfc-label {
+    font-size: 0.75rem;
+    font-weight: 600;
     color: var(--text-secondary);
-    margin-top: 8px;
-    font-weight: 500;
+}
+
+.pfc-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
 }
 
 .suggestion-title {

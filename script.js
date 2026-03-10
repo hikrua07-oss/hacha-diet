@@ -25,6 +25,9 @@ class DietApp {
         // 一時的なAI計算結果を保持
         this.currentAiMacros = { cal: 0, p: 0, f: 0, c: 0 };
 
+        // 日付が変わっていたら前日のログを保存して新しいログを作成
+        this.checkDateRollover();
+
         this.init();
     }
 
@@ -44,8 +47,34 @@ class DietApp {
             calories: 0,
             macros: { p: 0, f: 0, c: 0 },
             steps: 0,
-            exerciseMin: 0
+            exerciseMin: 0,
+            meals: [],
+            exercises: [] // 運動記録の履歴
         };
+    }
+
+    /**
+     * 日付の切り替わりを検出し、前日のログを履歴に移動する
+     * アプリ起動時に自動で呼ばれる
+     */
+    checkDateRollover() {
+        const today = new Date().toISOString().split('T')[0];
+        if (this.state.todayLog.date && this.state.todayLog.date !== today) {
+            // 前日のログに何らかのデータがある場合、履歴に保存
+            const oldLog = this.state.todayLog;
+            if (oldLog.calories > 0 || oldLog.weight !== null || oldLog.steps > 0) {
+                this.state.logs.push(oldLog);
+                this.saveData('diet_logs', this.state.logs);
+            }
+            // 新しい日のログを作成（体重は前日の値を引き継ぐ）
+            const lastWeight = oldLog.weight;
+            this.state.todayLog = this.createEmptyLog();
+            if (lastWeight) {
+                this.state.todayLog.weight = lastWeight;
+            }
+            this.saveData('diet_today_log', this.state.todayLog);
+            console.log(`📅 日付が変わりました (${oldLog.date} → ${today})。新しいログを作成しました。`);
+        }
     }
 
     /* === データ保存・読み込み (Local Storage) === */
@@ -64,6 +93,8 @@ class DietApp {
         this.updateWeightSection();
         this.updateCalorieSection();
         this.updateExerciseSection();
+        this.renderWeightChart();
+        this.updateMealHistory();
     }
 
     /** 日数計算とヘッダー更新 */
@@ -80,14 +111,14 @@ class DietApp {
 
     /** 体重カードの数値とプログレスバー更新 */
     updateWeightSection() {
-        const { startWeight, targetWeight } = this.state.profile;
+        const { startWeight, targetWeight, startDate, targetDate } = this.state.profile;
         const currentWeight = this.state.todayLog.weight || startWeight;
 
-        // --- 画面要素への反映 ---
+        // --- 現在の体重を表示 ---
         const weightSpan = document.querySelector('.weight-main .number');
         if (weightSpan) weightSpan.textContent = currentWeight.toFixed(1);
 
-        // 最終目標 (1年後)の計算
+        // --- 最終目標の計算と表示 ---
         const totalProgress = startWeight - currentWeight;
         const totalTarget = startWeight - targetWeight;
         const totalPercent = Math.max(0, Math.min(100, (totalProgress / totalTarget) * 100));
@@ -95,14 +126,56 @@ class DietApp {
         const totalFill = document.querySelector('.total-fill');
         if (totalFill) totalFill.style.width = `${totalPercent}%`;
 
-        // 今月の目標計算 (毎月約0.8kg減らすと仮定)
-        // 本来は日付と比較して動的に変わるが、モックとして固定値を計算
-        const expectedMonthlyDrop = totalTarget / 12;
-        const monthlyTargetWeight = currentWeight - expectedMonthlyDrop;
+        const finalTargetEl = document.getElementById('finalTargetWeight');
+        if (finalTargetEl) finalTargetEl.textContent = `${targetWeight.toFixed(1)} kg`;
 
-        // 今月のプログレスバーも仮の進捗で埋める（例として65%を使用）
+        const finalRemainingEl = document.getElementById('finalRemaining');
+        if (finalRemainingEl) {
+            const remaining = Math.max(0, currentWeight - targetWeight);
+            finalRemainingEl.textContent = `あと ${remaining.toFixed(1)} kg`;
+        }
+
+        // --- 今月の目標を動的に計算 ---
+        const start = new Date(startDate);
+        const end = new Date(targetDate);
+        const now = new Date();
+        const totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        const elapsedMonths = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()) + 1;
+        const monthlyDrop = totalTarget / Math.max(totalMonths, 1);
+        const monthlyTargetWeight = Math.max(targetWeight, startWeight - (monthlyDrop * elapsedMonths));
+
+        const monthlyTargetEl = document.getElementById('monthlyTargetWeight');
+        if (monthlyTargetEl) monthlyTargetEl.textContent = `${monthlyTargetWeight.toFixed(1)} kg`;
+
+        const monthlyRemainingEl = document.getElementById('monthlyRemaining');
+        if (monthlyRemainingEl) {
+            const monthlyRemaining = Math.max(0, currentWeight - monthlyTargetWeight);
+            monthlyRemainingEl.textContent = `あと ${monthlyRemaining.toFixed(1)} kg`;
+        }
+
+        // 今月のプログレスバー計算
+        const lastMonthTarget = startWeight - (monthlyDrop * Math.max(0, elapsedMonths - 1));
+        const monthlyProgress = lastMonthTarget - currentWeight;
+        const monthlyGoalRange = lastMonthTarget - monthlyTargetWeight;
+        const monthlyPercent = Math.max(0, Math.min(100, (monthlyProgress / Math.max(monthlyGoalRange, 0.1)) * 100));
+
         const monthlyFill = document.querySelector('.monthly-fill');
-        if (monthlyFill) monthlyFill.style.width = '65%';
+        if (monthlyFill) monthlyFill.style.width = `${monthlyPercent}%`;
+
+        // --- ステータスバッジの更新 ---
+        const badge = document.getElementById('statusBadge');
+        if (badge) {
+            if (currentWeight <= monthlyTargetWeight) {
+                badge.textContent = '達成！';
+                badge.className = 'badge success';
+            } else if (currentWeight <= lastMonthTarget) {
+                badge.textContent = '順調';
+                badge.className = 'badge success';
+            } else {
+                badge.textContent = '要注意';
+                badge.className = 'badge warning';
+            }
+        }
     }
 
     /** カロリー＆PFCカードの更新 */
@@ -111,23 +184,58 @@ class DietApp {
         const targetMacros = this.state.profile.macrosTarget;
         const current = this.state.todayLog;
 
-        const mainCal = document.querySelector('.metric-main');
+        // --- カロリー表示の更新 ---
+        const mainCal = document.getElementById('currentCalories');
         if (mainCal) {
             mainCal.textContent = current.calories.toLocaleString();
-            // カロリー超過ならクラスを付与
             if (current.calories > target) {
                 mainCal.classList.add('warning-text');
-                document.querySelector('.calorie-card').classList.add('warning-state');
+                document.querySelector('.calorie-card')?.classList.add('warning-state');
             } else {
                 mainCal.classList.remove('warning-text');
-                document.querySelector('.calorie-card').classList.remove('warning-state');
+                document.querySelector('.calorie-card')?.classList.remove('warning-state');
             }
         }
 
-        // PFCグラフの幅更新
+        // カロリー目標値の表示
+        const targetCalText = document.getElementById('targetCaloriesText');
+        if (targetCalText) targetCalText.textContent = `/ ${target.toLocaleString()} kcal`;
+
+        // 警告アイコンの表示切替
+        const warningIcon = document.getElementById('calorieWarningIcon');
+        if (warningIcon) {
+            warningIcon.style.display = current.calories > target ? 'inline' : 'none';
+        }
+
+        // --- PFC数値の動的更新 ---
+        const updateValue = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = Math.round(val);
+        };
+        updateValue('currentP', current.macros.p);
+        updateValue('targetP', targetMacros.p);
+        updateValue('currentF', current.macros.f);
+        updateValue('targetF', targetMacros.f);
+        updateValue('currentC', current.macros.c);
+        updateValue('targetC', targetMacros.c);
+
+        // 脂質の数値が超過した場合の警告表示
+        const macroValueF = document.getElementById('macroValueF');
+        if (macroValueF) {
+            if (current.macros.f > targetMacros.f) {
+                macroValueF.classList.add('warning-text');
+            } else {
+                macroValueF.classList.remove('warning-text');
+            }
+        }
+
+        // PFCプログレスバーの幅更新
         this.updateMacroBar('.macro-p', current.macros.p, targetMacros.p);
         this.updateMacroBar('.macro-f', current.macros.f, targetMacros.f);
         this.updateMacroBar('.macro-c', current.macros.c, targetMacros.c);
+
+        // ステータスメッセージの更新
+        this.updateStatusMessage();
     }
 
     /** 個別マクロ栄養素のバー幅更新 */
@@ -145,11 +253,205 @@ class DietApp {
         }
     }
 
-    updateExerciseSection() {
-        const stepsElement = document.querySelector('.activity-item:first-child .activity-value');
-        if (stepsElement) {
-            stepsElement.innerHTML = `${this.state.todayLog.steps.toLocaleString()}<small>歩</small>`;
+    /** ステータスメッセージを動的に更新 */
+    updateStatusMessage() {
+        const msgEl = document.getElementById('statusMessage');
+        if (!msgEl) return;
+
+        const current = this.state.todayLog;
+        const targetMacros = this.state.profile.macrosTarget;
+        const targetCal = this.state.profile.dailyCalorieTarget;
+
+        // デフォルトスタイルをリセット
+        msgEl.className = 'status-message';
+
+        if (current.calories === 0 && current.macros.p === 0) {
+            // まだ何も記録していない
+            msgEl.textContent = '今日はまだ記録がありません。食事を記録しましょう！ 🍽️';
+            msgEl.classList.add('status-info');
+            return;
         }
+
+        const overItems = [];
+        if (current.calories > targetCal) overItems.push('カロリー');
+        if (current.macros.f > targetMacros.f) overItems.push('脂質');
+        if (current.macros.c > targetMacros.c) overItems.push('糖質');
+
+        const shortItems = [];
+        if (current.macros.p < targetMacros.p * 0.7) shortItems.push('タンパク質');
+
+        if (overItems.length > 0) {
+            const advice = shortItems.length > 0
+                ? `補うべきは${shortItems.join('と')}！`
+                : '残りの食事で調整しましょう！';
+            msgEl.textContent = `${overItems.join('と')}がオーバー気味です。${advice}`;
+        } else {
+            msgEl.textContent = 'バランス良く食べられています！ 👍';
+            msgEl.classList.add('status-good');
+        }
+    }
+
+    updateExerciseSection() {
+        // 既存データの互換性保持（古いデータにexerciseMin/exercisesがない場合）
+        if (typeof this.state.todayLog.exerciseMin !== 'number' || isNaN(this.state.todayLog.exerciseMin)) {
+            this.state.todayLog.exerciseMin = 0;
+        }
+        if (!Array.isArray(this.state.todayLog.exercises)) {
+            this.state.todayLog.exercises = [];
+        }
+
+        // 歩数表示
+        const stepsEl = document.getElementById('stepsDisplay');
+        if (stepsEl) {
+            stepsEl.innerHTML = `${this.state.todayLog.steps.toLocaleString()}<small>歩</small>`;
+        }
+        // 運動時間表示
+        const minEl = document.getElementById('exerciseMinDisplay');
+        if (minEl) {
+            minEl.innerHTML = `${this.state.todayLog.exerciseMin}<small>分</small>`;
+        }
+        // 運動履歴表示
+        this.updateExerciseHistory();
+    }
+
+    /** 体重推移グラフを描画 */
+    renderWeightChart() {
+        const canvas = document.getElementById('weightChart');
+        const emptyMsg = document.getElementById('chartEmpty');
+        const periodLabel = document.getElementById('chartPeriod');
+        if (!canvas) return;
+
+        // 既存のチャートを破棄
+        if (this.weightChart) this.weightChart.destroy();
+
+        // データ収集（履歴 + 今日）
+        const dataPoints = [];
+        const labels = [];
+
+        this.state.logs.forEach(log => {
+            if (log.weight) {
+                labels.push(this.formatDateLabel(log.date));
+                dataPoints.push(log.weight);
+            }
+        });
+
+        const todayWeight = this.state.todayLog.weight;
+        if (todayWeight) {
+            labels.push('今日');
+            dataPoints.push(todayWeight);
+        }
+
+        // データがない場合はプレースホルダー表示
+        if (dataPoints.length === 0) {
+            if (emptyMsg) emptyMsg.style.display = 'block';
+            canvas.style.display = 'none';
+            if (periodLabel) periodLabel.textContent = 'データなし';
+            return;
+        }
+
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        canvas.style.display = 'block';
+        if (periodLabel) periodLabel.textContent = `${dataPoints.length}件の記録`;
+
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+        this.weightChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '体重',
+                        data: dataPoints,
+                        borderColor: '#3b82f6',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: dataPoints.length > 20 ? 2 : 4,
+                        borderWidth: 2.5,
+                    },
+                    {
+                        label: '最終目標',
+                        data: Array(labels.length).fill(this.state.profile.targetWeight),
+                        borderColor: 'rgba(16, 185, 129, 0.5)',
+                        borderDash: [6, 4],
+                        pointRadius: 0,
+                        borderWidth: 1.5,
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        titleFont: { size: 12 },
+                        bodyFont: { size: 13, weight: '600' },
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} kg`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(0,0,0,0.04)' },
+                        ticks: { font: { size: 11 }, callback: v => v + 'kg' },
+                        suggestedMin: this.state.profile.targetWeight - 2,
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10 }, maxRotation: 0 }
+                    }
+                }
+            }
+        });
+    }
+
+    /** 日付ラベルをM/D形式に変換 */
+    formatDateLabel(dateStr) {
+        const parts = dateStr.split('-');
+        return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+    }
+
+    /** 食事履歴一覧を更新 */
+    updateMealHistory() {
+        const mealList = document.getElementById('mealList');
+        const mealHistory = document.getElementById('mealHistory');
+        if (!mealList) return;
+
+        const meals = this.state.todayLog.meals || [];
+
+        if (meals.length === 0) {
+            mealList.innerHTML = '<p class="no-meals">まだ食事の記録がありません</p>';
+            return;
+        }
+
+        mealList.innerHTML = meals.map((meal, i) => `
+            <div class="meal-item">
+                <div class="meal-item-top">
+                    <span class="meal-time">${meal.time || ''}</span>
+                    <span class="meal-cal">${meal.cal} kcal</span>
+                </div>
+                <div class="meal-text">${meal.text}</div>
+                <div class="meal-pfc">
+                    <span class="pfc-tag tag-p">P ${meal.p}g</span>
+                    <span class="pfc-tag tag-f">F ${meal.f}g</span>
+                    <span class="pfc-tag tag-c">C ${meal.c}g</span>
+                </div>
+            </div>
+        `).join('');
     }
 
     /* === アクション/イベント === */
@@ -204,6 +506,54 @@ class DietApp {
         if (calcFoodBtn) {
             calcFoodBtn.addEventListener('click', () => {
                 this.simulateAIFoodCalculation();
+            });
+        }
+
+        // AI夕食提案ボタン
+        const aiSuggestBtn = document.getElementById('aiSuggestBtn');
+        if (aiSuggestBtn) {
+            aiSuggestBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.requestAISuggestion();
+            });
+        }
+
+        // 運動記録モーダル
+        const exerciseModal = document.getElementById('exerciseModal');
+        const openExBtn = document.getElementById('openExerciseModalBtn');
+        const closeExBtn = document.getElementById('closeExerciseModalBtn');
+
+        if (openExBtn && exerciseModal) {
+            openExBtn.addEventListener('click', () => {
+                document.getElementById('exerciseDuration').value = '';
+                document.getElementById('exerciseMemo').value = '';
+                exerciseModal.classList.add('active');
+            });
+        }
+        if (closeExBtn && exerciseModal) {
+            closeExBtn.addEventListener('click', () => {
+                exerciseModal.classList.remove('active');
+            });
+        }
+
+        // 運動種類チップ選択
+        const typeSelector = document.getElementById('exerciseTypeSelector');
+        if (typeSelector) {
+            typeSelector.addEventListener('click', (e) => {
+                const chip = e.target.closest('.type-chip');
+                if (!chip) return;
+                typeSelector.querySelectorAll('.type-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+            });
+        }
+
+        // 運動フォーム送信
+        const exerciseForm = document.getElementById('exerciseForm');
+        if (exerciseForm) {
+            exerciseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveExerciseRecord();
+                exerciseModal.classList.remove('active');
             });
         }
     }
@@ -289,6 +639,19 @@ class DietApp {
         this.state.todayLog.macros.f += f;
         this.state.todayLog.macros.c += c;
 
+        // 食事内容を履歴に保存
+        if (foodText && cal > 0) {
+            if (!this.state.todayLog.meals) this.state.todayLog.meals = [];
+            this.state.todayLog.meals.push({
+                text: foodText,
+                cal: Math.round(cal),
+                p: Math.round(p),
+                f: Math.round(f),
+                c: Math.round(c),
+                time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+            });
+        }
+
         // ローカルストレージに保存
         this.saveData('diet_today_log', this.state.todayLog);
 
@@ -299,11 +662,148 @@ class DietApp {
         alert('記録を保存しました！✨');
     }
 
-    /** AI（Gemini等）に提案をリクエストする（シミュレーション） */
-    requestAIsuggestion() {
-        // フロントエンドに直接APIキーを持たせない設計にするため、
-        // 今後バックエンド（Serverless Functionなど）にリクエストを送る形になります。
-        alert('【AI提案リクエスト】\n現在、脂質(85g)が目標(50g)を大幅に超えています！\nバックエンドを通じて、タンパク質中心のメニューをAIに取得します... (将来的にはGemini API連携を実装)');
+    /** 運動記録を保存 */
+    saveExerciseRecord() {
+        const duration = parseInt(document.getElementById('exerciseDuration').value) || 0;
+        const memo = document.getElementById('exerciseMemo').value.trim();
+        const activeChip = document.querySelector('#exerciseTypeSelector .type-chip.active');
+        const exerciseType = activeChip ? activeChip.dataset.type : 'その他';
+
+        if (duration <= 0) {
+            alert('運動時間を入力してください！');
+            return;
+        }
+
+        // 運動時間を加算
+        this.state.todayLog.exerciseMin += duration;
+
+        // 運動履歴に保存
+        if (!this.state.todayLog.exercises) this.state.todayLog.exercises = [];
+        this.state.todayLog.exercises.push({
+            type: exerciseType,
+            duration: duration,
+            memo: memo,
+            time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+        });
+
+        this.saveData('diet_today_log', this.state.todayLog);
+        this.updateDashboard();
+        alert('運動を記録しました！💪');
+    }
+
+    /** 運動履歴一覧を更新 */
+    updateExerciseHistory() {
+        const historyEl = document.getElementById('exerciseHistory');
+        const listEl = document.getElementById('exerciseList');
+        if (!historyEl || !listEl) return;
+
+        const exercises = this.state.todayLog.exercises || [];
+
+        if (exercises.length === 0) {
+            historyEl.style.display = 'none';
+            return;
+        }
+
+        historyEl.style.display = 'block';
+        listEl.innerHTML = exercises.map(ex => `
+            <div class="meal-item">
+                <div class="meal-item-top">
+                    <span class="meal-time">${ex.time || ''}</span>
+                    <span class="meal-cal">${ex.duration}分</span>
+                </div>
+                <div class="meal-text">${ex.type}${ex.memo ? ' — ' + ex.memo : ''}</div>
+            </div>
+        `).join('');
+    }
+
+    /** AIに夏飯提案をリクエスト */
+    async requestAISuggestion() {
+        const btn = document.getElementById('aiSuggestBtn');
+        const resultDiv = document.getElementById('aiSuggestionResult');
+        const textDiv = document.getElementById('aiSuggestionText');
+
+        if (!btn || !resultDiv || !textDiv) return;
+
+        // ローディング状態
+        btn.textContent = 'AIが考え中...';
+        btn.disabled = true;
+        resultDiv.style.display = 'none';
+
+        // 現在のPFC状況を取得
+        const current = this.state.todayLog;
+        const target = this.state.profile;
+
+        const context = `今日ここまでの摂取:
+- カロリー: ${current.calories} / ${target.dailyCalorieTarget} kcal
+- タンパク質: ${Math.round(current.macros.p)} / ${target.macrosTarget.p} g
+- 脂質: ${Math.round(current.macros.f)} / ${target.macrosTarget.f} g
+- 糖質: ${Math.round(current.macros.c)} / ${target.macrosTarget.c} g
+残りのカロリー枠: ${Math.max(0, target.dailyCalorieTarget - current.calories)} kcal`;
+
+        try {
+            const response = await fetch('/api/analyze-food', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    foodText: `以下の栄養状況を踏まえて、不足している栄養素を補い、超過しているものを抑えた「おすすめの夜ご飯メニュー」を1つ提案してください。
+JSONではなく、日本語の文章で以下の形式で回答してください。
+「メニュー名」と「理由（短く）」と「推定カロリー」を含めてください。
+
+${context}`
+                })
+            });
+
+            if (!response.ok) throw new Error('サーバーエラー');
+
+            // AI提案用のAPIエンドポイントがまだJSON返却のみの場合のフォールバック
+            const data = await response.json();
+            let suggestionHtml = '';
+
+            if (typeof data === 'string') {
+                suggestionHtml = data;
+            } else if (data.suggestion) {
+                suggestionHtml = data.suggestion;
+            } else {
+                // JSONデータをメニュー提案として整形
+                const remaining = {
+                    cal: Math.max(0, target.dailyCalorieTarget - current.calories),
+                    p: Math.max(0, target.macrosTarget.p - current.macros.p),
+                    f: Math.max(0, target.macrosTarget.f - current.macros.f),
+                    c: Math.max(0, target.macrosTarget.c - current.macros.c)
+                };
+                suggestionHtml = `
+                    <strong>おすすめ: タンパク質中心の食事</strong><br>
+                    <span class="suggestion-desc">
+                        残りのカロリー枠は <strong>${remaining.cal} kcal</strong>。<br>
+                        タンパク質をあと <strong>${Math.round(remaining.p)}g</strong> 摂りたいところ。<br>
+                        → 鶏むね肉のサラダ、豆腐ステーキ、焼き魚定食などがおすすめです！
+                    </span>
+                `;
+            }
+
+            textDiv.innerHTML = suggestionHtml;
+            resultDiv.style.display = 'block';
+
+        } catch (error) {
+            console.error('AI提案エラー:', error);
+            // オフラインでも基本的な提案を表示
+            const remaining = {
+                cal: Math.max(0, target.dailyCalorieTarget - current.calories),
+                p: Math.max(0, Math.round(target.macrosTarget.p - current.macros.p)),
+            };
+            textDiv.innerHTML = `
+                <strong>おすすめ: タンパク質重視の食事</strong><br>
+                <span class="suggestion-desc">
+                    残りカロリー: <strong>${remaining.cal} kcal</strong>、
+                    タンパク質あと: <strong>${remaining.p}g</strong><br>
+                    → 鶏むね・豆腐・卵などでタンパク質を補いましょう！
+                </span>
+            `;
+            resultDiv.style.display = 'block';
+        } finally {
+            btn.textContent = 'AIに最適な夜ご飯を提案してもらう';
+            btn.disabled = false;
+        }
     }
 }
 

@@ -11,6 +11,7 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -36,7 +37,7 @@
             <section class="glass-card hero-card">
                 <div class="card-top">
                     <span class="card-label">現在の体重</span>
-                    <span class="badge success">順調</span>
+                    <span class="badge success" id="statusBadge">順調</span>
                 </div>
                 <div class="weight-main">
                     <span class="number">65.2</span>
@@ -46,8 +47,8 @@
                     <!-- 今月の目標（短期目標） -->
                     <div class="progress-group">
                         <div class="progress-text">
-                            <span>🎯 今月の目標: <strong>64.4 kg</strong></span>
-                            <span class="remaining">あと 0.8 kg</span>
+                            <span>🎯 今月の目標: <strong id="monthlyTargetWeight">64.4 kg</strong></span>
+                            <span class="remaining" id="monthlyRemaining">あと 0.8 kg</span>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill monthly-fill" style="width: 65%;"></div>
@@ -57,8 +58,8 @@
                     <!-- 最終目標（長期目標） -->
                     <div class="progress-group final-goal-group">
                         <div class="progress-text">
-                            <span>🏁 最終目標: <strong>55.0 kg</strong> (1年後)</span>
-                            <span class="remaining">あと 10.2 kg</span>
+                            <span>🏁 最終目標: <strong id="finalTargetWeight">55.0 kg</strong> (1年後)</span>
+                            <span class="remaining" id="finalRemaining">あと 10.2 kg</span>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill total-fill" style="width: 20%;"></div>
@@ -67,16 +68,28 @@
                 </div>
             </section>
 
+            <!-- 体重推移グラフ -->
+            <section class="glass-card chart-card">
+                <div class="card-top">
+                    <span class="card-label">体重の推移</span>
+                    <span class="chart-period" id="chartPeriod">データなし</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="weightChart"></canvas>
+                    <p class="chart-empty" id="chartEmpty">体重を記録するとグラフが表示されます 📈</p>
+                </div>
+            </section>
+
             <div class="grid-container">
                 <!-- カロリー＆PFCバランスカード -->
-                <section class="glass-card calorie-card warning-state">
+                <section class="glass-card calorie-card">
                     <div class="card-top">
                         <span class="card-label">今日の栄養バランス</span>
-                        <span class="icon-warning">⚠️</span>
+                        <span class="icon-warning" id="calorieWarningIcon" style="display:none;">⚠️</span>
                     </div>
                     <div class="metric-display">
-                        <div class="metric-main warning-text">2,100</div>
-                        <div class="metric-sub">/ 1,800 kcal</div>
+                        <div class="metric-main" id="currentCalories">0</div>
+                        <div class="metric-sub" id="targetCaloriesText">/ 1,800 kcal</div>
                     </div>
 
                     <!-- PFC (タンパク質・脂質・炭水化物) グラフ -->
@@ -84,7 +97,8 @@
                         <div class="macro-item">
                             <div class="macro-header">
                                 <span class="macro-label">P (タンパク質)</span>
-                                <span class="macro-value">55<small>/80g</small></span>
+                                <span class="macro-value"><span id="currentP">0</span><small>/<span
+                                            id="targetP">80</span>g</small></span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill macro-p" style="width: 68%;"></div>
@@ -93,7 +107,8 @@
                         <div class="macro-item">
                             <div class="macro-header">
                                 <span class="macro-label">F (脂質)</span>
-                                <span class="macro-value warning-text">85<small>/50g</small></span>
+                                <span class="macro-value" id="macroValueF"><span id="currentF">0</span><small>/<span
+                                            id="targetF">50</span>g</small></span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill macro-f warning-fill" style="width: 100%;"></div>
@@ -102,7 +117,8 @@
                         <div class="macro-item">
                             <div class="macro-header">
                                 <span class="macro-label">C (糖質)</span>
-                                <span class="macro-value">220<small>/250g</small></span>
+                                <span class="macro-value"><span id="currentC">0</span><small>/<span
+                                            id="targetC">250</span>g</small></span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill macro-c" style="width: 88%;"></div>
@@ -110,8 +126,26 @@
                         </div>
                     </div>
 
-                    <p class="status-message">脂質がオーバー気味です。補うべきはタンパク質！</p>
-                    <button class="action-btn ai-btn">AIに最適な夜ご飯を提案してもらう</button>
+                    <p class="status-message" id="statusMessage">今日はまだ記録がありません。食事を記録しましょう！ 🍽️</p>
+
+                    <!-- 今日の食事記録一覧 -->
+                    <div class="meal-history" id="mealHistory">
+                        <div class="meal-history-header">
+                            <span class="meal-history-label">📋 今日の食事記録</span>
+                        </div>
+                        <div class="meal-list" id="mealList">
+                            <p class="no-meals">まだ食事の記録がありません</p>
+                        </div>
+                    </div>
+
+                    <!-- AI提案表示エリア -->
+                    <div class="ai-suggestion-result" id="aiSuggestionResult" style="display:none;">
+                        <div class="suggestion-box">
+                            <div class="suggestion-title">🧑‍🍳 AIおすすめメニュー</div>
+                            <div class="suggestion-content" id="aiSuggestionText"></div>
+                        </div>
+                    </div>
+                    <button class="action-btn ai-btn" id="aiSuggestBtn">AIに最適な夜ご飯を提案してもらう</button>
                 </section>
 
                 <!-- 運動カード -->
@@ -121,12 +155,20 @@
                     </div>
                     <div class="activity-list">
                         <div class="activity-item">
-                            <span class="activity-value">5,230<small>歩</small></span>
+                            <span class="activity-value" id="stepsDisplay">0<small>歩</small></span>
                         </div>
                         <div class="activity-item">
-                            <span class="activity-value">15<small>分</small></span>
-                            <span class="activity-type">筋トレ</span>
+                            <span class="activity-value" id="exerciseMinDisplay">0<small>分</small></span>
+                            <span class="activity-type" id="exerciseTypeDisplay">運動</span>
                         </div>
+                    </div>
+
+                    <!-- 運動履歴 -->
+                    <div class="exercise-history" id="exerciseHistory" style="display:none;">
+                        <div class="meal-history-header">
+                            <span class="meal-history-label">🏃 今日の運動記録</span>
+                        </div>
+                        <div class="meal-list" id="exerciseList"></div>
                     </div>
 
                     <!-- AIおすすめ運動 -->
@@ -138,7 +180,7 @@
                         </div>
                     </div>
 
-                    <button class="action-btn outline-btn">運動を記録する</button>
+                    <button class="action-btn outline-btn" id="openExerciseModalBtn">運動を記録する</button>
                 </section>
             </div>
         </main>
@@ -245,6 +287,40 @@
     </div>
 
     <script src="script.js"></script>
+
+    <!-- 運動記録モーダル -->
+    <div class="modal-overlay" id="exerciseModal">
+        <div class="glass-card modal-content">
+            <div class="modal-header">
+                <h2>運動を記録</h2>
+                <button class="close-btn" id="closeExerciseModalBtn">&times;</button>
+            </div>
+            <form id="exerciseForm">
+                <div class="form-group">
+                    <label>運動の種類</label>
+                    <div class="exercise-type-selector" id="exerciseTypeSelector">
+                        <button type="button" class="type-chip active" data-type="ウォーキング">🚶 ウォーキング</button>
+                        <button type="button" class="type-chip" data-type="筋トレ">💪 筋トレ</button>
+                        <button type="button" class="type-chip" data-type="ランニング">🏃 ランニング</button>
+                        <button type="button" class="type-chip" data-type="ヨガ">🧘 ヨガ</button>
+                        <button type="button" class="type-chip" data-type="ストレッチ">🤸 ストレッチ</button>
+                        <button type="button" class="type-chip" data-type="その他">⚙️ その他</button>
+                    </div>
+                </div>
+                <div class="form-group flex-group">
+                    <div class="half-width">
+                        <label>時間（分）</label>
+                        <input type="number" id="exerciseDuration" placeholder="例: 30" min="1">
+                    </div>
+                    <div class="half-width">
+                        <label>メモ（任意）</label>
+                        <input type="text" id="exerciseMemo" placeholder="例: 腹筋20回">
+                    </div>
+                </div>
+                <button type="submit" class="action-btn ai-btn">運動を保存する</button>
+            </form>
+        </div>
+    </div>
 </body>
 
 </html>

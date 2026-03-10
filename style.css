@@ -390,6 +390,201 @@ body {
     text-align: center;
 }
 
+/* ステータスメッセージのバリエーション */
+.status-message.status-info {
+    background: rgba(219, 234, 254, 0.5);
+    color: #1e40af;
+}
+
+.status-message.status-good {
+    background: rgba(209, 250, 229, 0.5);
+    color: #065f46;
+}
+
+/* バッジの警告状態 */
+.badge.warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* --- 体重推移グラフ --- */
+.chart-card {
+    position: relative;
+}
+
+.chart-period {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-blue);
+    background: var(--accent-blue-soft);
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 220px;
+}
+
+.chart-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.chart-empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* --- 食事履歴 --- */
+.meal-history {
+    margin: 16px 0;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(148, 163, 184, 0.3);
+}
+
+.meal-history-header {
+    margin-bottom: 12px;
+}
+
+.meal-history-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.meal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.no-meals {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 12px;
+}
+
+.meal-item {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    border-radius: 12px;
+    padding: 12px;
+    transition: transform 0.2s;
+}
+
+.meal-item:hover {
+    transform: translateY(-1px);
+}
+
+.meal-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.meal-time {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: rgba(241, 245, 249, 0.8);
+    padding: 2px 8px;
+    border-radius: 8px;
+}
+
+.meal-cal {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.meal-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.meal-pfc {
+    display: flex;
+    gap: 6px;
+}
+
+.pfc-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 8px;
+}
+
+.tag-p {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.tag-f {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+}
+
+.tag-c {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+}
+
+/* --- 運動種類セレクター --- */
+.exercise-type-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.type-chip {
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(203, 213, 225, 0.5);
+    background: rgba(255, 255, 255, 0.8);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.type-chip:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+.type-chip.active {
+    background: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* --- 運動履歴 --- */
+.exercise-history {
+    margin: 16px 0;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(148, 163, 184, 0.3);
+}
+
+/* --- AI提案結果 --- */
+.ai-suggestion-result {
+    margin-bottom: 16px;
+    animation: fadeIn 0.4s ease-out;
+}
+
 /* --- 運動カード --- */
 .activity-list {
     display: flex;

@@ -972,3 +972,130 @@ body {
     font-weight: 300;
     line-height: 1;
 }
+
+/* === PWA インストールバナー === */
+.pwa-install-banner {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    width: calc(100% - 32px);
+    max-width: 400px;
+    animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.pwa-install-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.pwa-install-icon {
+    flex-shrink: 0;
+}
+
+.pwa-install-icon img {
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pwa-install-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.pwa-install-text strong {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.pwa-install-text span {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.pwa-install-btn {
+    flex-shrink: 0;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pwa-install-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.pwa-dismiss-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.pwa-dismiss-btn:hover {
+    opacity: 1;
+}
+
+/* === スタンドアロンモード（ホーム画面から起動時）の調整 === */
+@media (display-mode: standalone) {
+
+    /* ステータスバー分のパディングを追加 */
+    .header {
+        padding-top: max(50px, env(safe-area-inset-top, 50px));
+    }
+
+    /* ノッチ対応のセーフエリア */
+    .app-container {
+        padding-left: max(24px, env(safe-area-inset-left, 24px));
+        padding-right: max(24px, env(safe-area-inset-right, 24px));
+        padding-bottom: max(120px, calc(env(safe-area-inset-bottom, 0px) + 120px));
+    }
+
+    /* フローティングナビのセーフエリア調整 */
+    .floating-nav {
+        bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    }
+
+    /* PWAインストールバナーは非表示（すでにインストール済み） */
+    .pwa-install-banner {
+        display: none !important;
+    }
+}

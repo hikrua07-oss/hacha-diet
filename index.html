@@ -5,6 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hacha Diet Dashboard</title>
+
+    <!-- PWA メタタグ -->
+    <meta name="description" content="あなたのダイエットをサポートする栄養管理アプリ">
+    <meta name="theme-color" content="#10b981">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HachaDiet">
+
+    <!-- PWA マニフェスト -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- アイコン -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -321,6 +338,79 @@
             </form>
         </div>
     </div>
+    <!-- PWA インストールバナー -->
+    <div class="pwa-install-banner" id="pwaInstallBanner" style="display:none;">
+        <div class="pwa-install-content">
+            <div class="pwa-install-icon">
+                <img src="/icons/icon-192x192.png" alt="App Icon" width="40" height="40">
+            </div>
+            <div class="pwa-install-text">
+                <strong>ホーム画面に追加</strong>
+                <span>いつでもワンタップで起動できます</span>
+            </div>
+            <button class="pwa-install-btn" id="pwaInstallBtn">追加</button>
+            <button class="pwa-dismiss-btn" id="pwaDismissBtn">&times;</button>
+        </div>
+    </div>
+
+    <!-- Service Worker 登録 & PWAインストール管理 -->
+    <script>
+        // Service Worker の登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('✅ SW登録成功:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('❌ SW登録失敗:', error);
+                    });
+            });
+        }
+
+        // PWA インストールプロンプト管理
+        let deferredPrompt;
+        const installBanner = document.getElementById('pwaInstallBanner');
+        const installBtn = document.getElementById('pwaInstallBtn');
+        const dismissBtn = document.getElementById('pwaDismissBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // ブラウザデフォルトのバナーを抑制
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // 以前閉じていなければバナーを表示
+            if (!localStorage.getItem('pwa_install_dismissed')) {
+                installBanner.style.display = 'flex';
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`PWAインストール結果: ${outcome}`);
+                    deferredPrompt = null;
+                    installBanner.style.display = 'none';
+                }
+            });
+        }
+
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                installBanner.style.display = 'none';
+                localStorage.setItem('pwa_install_dismissed', 'true');
+            });
+        }
+
+        // インストール完了時
+        window.addEventListener('appinstalled', () => {
+            installBanner.style.display = 'none';
+            deferredPrompt = null;
+            console.log('✅ PWA インストール完了！');
+        });
+    </script>
 </body>
 
 </html>

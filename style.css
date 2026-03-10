@@ -224,6 +224,146 @@ body {
     color: var(--text-secondary);
 }
 
+/* --- 今日の体重クイック入力 --- */
+.quick-weight-input {
+    margin: 16px 0;
+    padding: 16px;
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.06), rgba(59, 130, 246, 0.04));
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 14px;
+    transition: all 0.3s ease;
+}
+
+.quick-weight-input:focus-within {
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
+}
+
+.quick-weight-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.quick-weight-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quick-weight-field {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(203, 213, 225, 0.5);
+    background: rgba(255, 255, 255, 0.9);
+    font-family: inherit;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.2s;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.quick-weight-field::-webkit-outer-spin-button,
+.quick-weight-field::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quick-weight-field:focus {
+    border-color: var(--success-green);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.quick-weight-unit {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.quick-weight-save {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    white-space: nowrap;
+}
+
+.quick-weight-save:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.quick-weight-save:active {
+    transform: translateY(0);
+}
+
+.quick-weight-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.quick-weight-status {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    min-height: 20px;
+    transition: all 0.3s ease;
+}
+
+.quick-weight-status.success {
+    color: #059669;
+}
+
+.quick-weight-status.recorded {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* --- 設定モーダル --- */
+.settings-modal-content {
+    max-height: 85vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.settings-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.settings-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 16px;
+    padding-bottom: 0;
+}
+
+.settings-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+}
+
+.third-width {
+    flex: 1;
+}
+
 .progress-wrapper {
     background: rgba(255, 255, 255, 0.5);
     border-radius: 12px;

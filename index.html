@@ -60,6 +60,19 @@
                     <span class="number">65.2</span>
                     <span class="unit">kg</span>
                 </div>
+
+                <!-- 今日の体重クイック入力 -->
+                <div class="quick-weight-input" id="quickWeightInput">
+                    <div class="quick-weight-label">⚖️ 今日の体重を記録</div>
+                    <div class="quick-weight-row">
+                        <input type="number" step="0.1" id="quickWeight" placeholder="例: 65.0"
+                            class="quick-weight-field">
+                        <span class="quick-weight-unit">kg</span>
+                        <button type="button" id="quickWeightBtn" class="quick-weight-save">記録</button>
+                    </div>
+                    <div class="quick-weight-status" id="quickWeightStatus"></div>
+                </div>
+
                 <div class="progress-wrapper">
                     <!-- 今月の目標（短期目標） -->
                     <div class="progress-group">
@@ -231,7 +244,7 @@
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" id="openSettingsBtn">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -335,6 +348,69 @@
                     </div>
                 </div>
                 <button type="submit" class="action-btn ai-btn">運動を保存する</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 設定モーダル -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="glass-card modal-content settings-modal-content">
+            <div class="modal-header">
+                <h2>⚙️ 目標設定</h2>
+                <button class="close-btn" id="closeSettingsBtn">&times;</button>
+            </div>
+            <form id="settingsForm">
+                <div class="settings-section">
+                    <div class="settings-section-title">📏 体重の設定</div>
+                    <div class="form-group flex-group">
+                        <div class="half-width">
+                            <label>開始時の体重 (kg)</label>
+                            <input type="number" step="0.1" id="settingStartWeight" placeholder="例: 75.0">
+                        </div>
+                        <div class="half-width">
+                            <label>目標体重 (kg)</label>
+                            <input type="number" step="0.1" id="settingTargetWeight" placeholder="例: 55.0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <div class="settings-section-title">📅 期間の設定</div>
+                    <div class="form-group flex-group">
+                        <div class="half-width">
+                            <label>開始日</label>
+                            <input type="date" id="settingStartDate">
+                        </div>
+                        <div class="half-width">
+                            <label>目標達成日</label>
+                            <input type="date" id="settingTargetDate">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <div class="settings-section-title">🍽️ 栄養目標</div>
+                    <div class="form-group">
+                        <label>1日の目標カロリー (kcal)</label>
+                        <input type="number" id="settingCalorieTarget" placeholder="例: 1800">
+                    </div>
+                    <div class="form-group flex-group">
+                        <div class="third-width">
+                            <label>タンパク質 (g)</label>
+                            <input type="number" id="settingTargetP" placeholder="80">
+                        </div>
+                        <div class="third-width">
+                            <label>脂質 (g)</label>
+                            <input type="number" id="settingTargetF" placeholder="50">
+                        </div>
+                        <div class="third-width">
+                            <label>糖質 (g)</label>
+                            <input type="number" id="settingTargetC" placeholder="250">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="action-btn ai-btn">設定を保存する</button>
             </form>
         </div>
     </div>

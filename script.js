@@ -37,6 +37,7 @@ class DietApp {
     init() {
         this.updateDashboard();
         this.setupEventListeners();
+        this.updateQuickWeightStatus();
     }
 
     /** 空の1日分のログを作成 */
@@ -176,6 +177,107 @@ class DietApp {
                 badge.className = 'badge warning';
             }
         }
+
+        // --- クイック体重入力の状態を更新 ---
+        this.updateQuickWeightStatus();
+    }
+
+    /** クイック体重入力エリアの状態表示を更新 */
+    updateQuickWeightStatus() {
+        const statusEl = document.getElementById('quickWeightStatus');
+        const inputEl = document.getElementById('quickWeight');
+        if (!statusEl) return;
+
+        if (this.state.todayLog.weight !== null) {
+            statusEl.textContent = `✅ 本日の記録: ${this.state.todayLog.weight.toFixed(1)} kg`;
+            statusEl.className = 'quick-weight-status recorded';
+            if (inputEl) inputEl.placeholder = this.state.todayLog.weight.toFixed(1);
+        } else {
+            statusEl.textContent = '';
+            statusEl.className = 'quick-weight-status';
+        }
+    }
+
+    /** クイック体重記録を保存 */
+    saveQuickWeight() {
+        const inputEl = document.getElementById('quickWeight');
+        const statusEl = document.getElementById('quickWeightStatus');
+        const btn = document.getElementById('quickWeightBtn');
+        if (!inputEl) return;
+
+        const weight = parseFloat(inputEl.value);
+        if (isNaN(weight) || weight <= 0 || weight > 500) {
+            if (statusEl) {
+                statusEl.textContent = '⚠️ 有効な体重を入力してください';
+                statusEl.className = 'quick-weight-status';
+                statusEl.style.color = '#ef4444';
+                setTimeout(() => { statusEl.style.color = ''; }, 2000);
+            }
+            return;
+        }
+
+        // 体重を保存
+        this.state.todayLog.weight = weight;
+        this.saveData('diet_today_log', this.state.todayLog);
+
+        // ボタンに成功を示す一時演出
+        if (btn) {
+            btn.textContent = '✓';
+            btn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+            setTimeout(() => {
+                btn.textContent = '記録';
+                btn.style.background = '';
+            }, 1500);
+        }
+
+        // 入力をクリア
+        inputEl.value = '';
+
+        // ダッシュボード全体を更新
+        this.updateDashboard();
+    }
+
+    /** 設定モーダルに現在の値をセット */
+    openSettingsModal() {
+        const p = this.state.profile;
+        document.getElementById('settingStartWeight').value = p.startWeight || '';
+        document.getElementById('settingTargetWeight').value = p.targetWeight || '';
+        document.getElementById('settingStartDate').value = p.startDate || '';
+        document.getElementById('settingTargetDate').value = p.targetDate || '';
+        document.getElementById('settingCalorieTarget').value = p.dailyCalorieTarget || '';
+        document.getElementById('settingTargetP').value = p.macrosTarget?.p || '';
+        document.getElementById('settingTargetF').value = p.macrosTarget?.f || '';
+        document.getElementById('settingTargetC').value = p.macrosTarget?.c || '';
+    }
+
+    /** 設定を保存 */
+    saveSettings() {
+        const startWeight = parseFloat(document.getElementById('settingStartWeight').value);
+        const targetWeight = parseFloat(document.getElementById('settingTargetWeight').value);
+        const startDate = document.getElementById('settingStartDate').value;
+        const targetDate = document.getElementById('settingTargetDate').value;
+        const calorieTarget = parseInt(document.getElementById('settingCalorieTarget').value);
+        const targetP = parseInt(document.getElementById('settingTargetP').value);
+        const targetF = parseInt(document.getElementById('settingTargetF').value);
+        const targetC = parseInt(document.getElementById('settingTargetC').value);
+
+        // 各フィールドを個別に更新（入力されている項目のみ）
+        if (!isNaN(startWeight) && startWeight > 0) this.state.profile.startWeight = startWeight;
+        if (!isNaN(targetWeight) && targetWeight > 0) this.state.profile.targetWeight = targetWeight;
+        if (startDate) this.state.profile.startDate = startDate;
+        if (targetDate) this.state.profile.targetDate = targetDate;
+        if (!isNaN(calorieTarget) && calorieTarget > 0) this.state.profile.dailyCalorieTarget = calorieTarget;
+        if (!isNaN(targetP) && targetP > 0) this.state.profile.macrosTarget.p = targetP;
+        if (!isNaN(targetF) && targetF > 0) this.state.profile.macrosTarget.f = targetF;
+        if (!isNaN(targetC) && targetC > 0) this.state.profile.macrosTarget.c = targetC;
+
+        // プロフィールを保存
+        this.saveData('diet_profile', this.state.profile);
+
+        // ダッシュボードを更新
+        this.updateDashboard();
+
+        alert('設定を保存しました！ ⚙️');
     }
 
     /** カロリー＆PFCカードの更新 */
@@ -554,6 +656,54 @@ class DietApp {
                 e.preventDefault();
                 this.saveExerciseRecord();
                 exerciseModal.classList.remove('active');
+            });
+        }
+
+        // --- クイック体重記録 ---
+        const quickWeightBtn = document.getElementById('quickWeightBtn');
+        if (quickWeightBtn) {
+            quickWeightBtn.addEventListener('click', () => {
+                this.saveQuickWeight();
+            });
+        }
+
+        // クイック体重入力欄でEnterで保存
+        const quickWeightInput = document.getElementById('quickWeight');
+        if (quickWeightInput) {
+            quickWeightInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.saveQuickWeight();
+                }
+            });
+        }
+
+        // --- 設定モーダル ---
+        const settingsModal = document.getElementById('settingsModal');
+        const openSettingsBtn = document.getElementById('openSettingsBtn');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+
+        if (openSettingsBtn && settingsModal) {
+            openSettingsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openSettingsModal();
+                settingsModal.classList.add('active');
+            });
+        }
+
+        if (closeSettingsBtn && settingsModal) {
+            closeSettingsBtn.addEventListener('click', () => {
+                settingsModal.classList.remove('active');
+            });
+        }
+
+        // 設定フォーム送信
+        const settingsForm = document.getElementById('settingsForm');
+        if (settingsForm) {
+            settingsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveSettings();
+                settingsModal.classList.remove('active');
             });
         }
     }

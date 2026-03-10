@@ -3,8 +3,8 @@
  * オフラインキャッシュとバックグラウンド同期を管理する
  */
 
-const CACHE_NAME = 'hacha-diet-v1';
-const STATIC_CACHE_NAME = 'hacha-diet-static-v1';
+const CACHE_NAME = 'hacha-diet-v2';
+const STATIC_CACHE_NAME = 'hacha-diet-static-v2';
 
 // キャッシュする静的ファイル一覧
 const STATIC_ASSETS = [
